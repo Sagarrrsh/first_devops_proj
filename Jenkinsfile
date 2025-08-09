@@ -7,8 +7,7 @@ pipeline {
     SSH_KEY = credentials('ec2_ssh_key')
   }
 
-  
-
+  stages {
     stage('Terraform Apply') {
       steps {
         dir('terraform') {
