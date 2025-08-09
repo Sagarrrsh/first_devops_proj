@@ -10,7 +10,7 @@ pipeline {
   stages {
     stage('Checkout') {
       steps {
-        git 'https://github.com/yourusername/yourrepo.git'
+        git 'https://github.com/Sagarrrsh/first_devops_proj.git'
       }
     }
 
