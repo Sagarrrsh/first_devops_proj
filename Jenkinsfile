@@ -7,12 +7,7 @@ pipeline {
     SSH_KEY = credentials('ec2_ssh_key')
   }
 
-  stages {
-    stage('Checkout') {
-      steps {
-        git 'https://github.com/Sagarrrsh/first_devops_proj.git'
-      }
-    }
+  
 
     stage('Terraform Apply') {
       steps {
