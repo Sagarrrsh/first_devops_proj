@@ -23,7 +23,8 @@ pipeline {
           script {
             def ip = sh(script: "terraform -chdir=../terraform output -raw public_ip", returnStdout: true).trim()
             echo "Ubuntu EC2 IP: ${ip}"
-            sh "ansible-playbook -i ${ip}, install_apache.yml --user=ubuntu --private-key=~/.ssh/id_rsa"
+            // Run ansible-playbook inside WSL
+            sh "wsl ansible-playbook -i ${ip}, install_apache.yml --user=ubuntu --private-key=~/.ssh/id_rsa"
           }
         }
       }
