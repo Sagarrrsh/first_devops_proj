@@ -8,12 +8,6 @@ pipeline {
   }
 
   stages {
-    stage('Checkout') {
-      steps {
-        git 'https://github.com/Sagarrrsh/first_devops_proj.git'
-      }
-    }
-
     stage('Terraform Apply') {
       steps {
         dir('terraform') {
@@ -29,7 +23,8 @@ pipeline {
           script {
             def ip = sh(script: "terraform -chdir=../terraform output -raw public_ip", returnStdout: true).trim()
             echo "Ubuntu EC2 IP: ${ip}"
-            sh "ansible-playbook -i ${ip}, install_apache.yml --user=ubuntu --private-key=~/.ssh/id_rsa"
+            // Run ansible-playbook inside WSL
+            sh "wsl ansible-playbook -i ${ip}, install_apache.yml --user=ubuntu --private-key=~/.ssh/id_rsa"
           }
         }
       }
