@@ -29,11 +29,12 @@ pipeline {
                             "
                         ''', returnStdout: true).trim()
                         echo "Ubuntu EC2 IP: ${ip}"
+
                         withCredentials([sshUserPrivateKey(credentialsId: 'ec2_ssh_key', keyFileVariable: 'SSH_KEY_FILE')]) {
                             sh """
                             wsl -d Ubuntu bash -c '
                                 mkdir -p ~/.ssh &&
-                                cp /mnt/c/$(echo ${SSH_KEY_FILE} | sed "s#:#/#g") ~/.ssh/id_rsa &&
+                                cp "${SSH_KEY_FILE}" ~/.ssh/id_rsa &&
                                 chmod 600 ~/.ssh/id_rsa &&
                                 cd /mnt/c/ProgramData/Jenkins/.jenkins/workspace/${JOB_NAME}/ansible &&
                                 ansible-playbook -i ${ip}, install_apache.yml --user=ubuntu --private-key=~/.ssh/id_rsa &&
