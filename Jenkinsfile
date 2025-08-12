@@ -1,38 +1,38 @@
 pipeline {
     agent any
+    
     environment {
-        AWS_ACCESS_KEY_ID     = credentials('aws_access_key_id')
+        AWS_ACCESS_KEY_ID = credentials('aws_access_key_id')
         AWS_SECRET_ACCESS_KEY = credentials('aws_secret_access_key')
-        SSH_KEY               = credentials('ec2_ssh_key')
-        SSH_USER              = 'ubuntu'
+        SSH_KEY = credentials('ec2_ssh_key')
     }
+    
     stages {
         stage('Terraform Apply') {
             steps {
                 dir('terraform') {
-                    sh 'terraform init'
-                    sh 'terraform apply -auto-approve'
+                    bat 'terraform init'
+                    bat 'terraform apply -auto-approve'
                 }
             }
         }
-        stage('Run Ansible from WSL') {
+        
+        stage('Get Instance IP') {
             steps {
                 dir('ansible') {
                     script {
-                        def ip = sh(script: "terraform -chdir=../terraform output -raw public_ip", returnStdout: true).trim()
+                        def ip = bat(script: "terraform -chdir=../terraform output -raw public_ip", returnStdout: true).trim()
                         echo "Ubuntu EC2 IP: ${ip}"
-                        writeFile file: 'id_rsa', text: SSH_KEY
-                        sh 'chmod 600 id_rsa'
-
-                        // Run inside WSL with login shell so PATH is loaded
-                        sh """
-                        wsl bash -lc '
-                            ansible-playbook -i "${ip}," install_apache.yml \
-                            --user=${SSH_USER} \
-                            --private-key=\$(wslpath "$(pwd)/id_rsa")
-                        '
-                        """
+                        env.INSTANCE_IP = ip
                     }
+                }
+            }
+        }
+        
+        stage('Run Ansible') {
+            steps {
+                dir('ansible') {
+                    bat "wsl ansible-playbook -i ${env.INSTANCE_IP}, install_apache.yml --user=ubuntu --private-key=~/.ssh/id_rsa"
                 }
             }
         }
