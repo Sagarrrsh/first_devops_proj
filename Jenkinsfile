@@ -19,11 +19,10 @@ pipeline {
         
         stage('Get Instance IP') {
             steps {
-                dir('ansible') {
-                    script {
-                        def ip = bat(script: "terraform -chdir=../terraform output -raw public_ip", returnStdout: true).trim()
-                        echo "Ubuntu EC2 IP: ${ip}"
-                        env.INSTANCE_IP = ip
+                script {
+                    dir('terraform') {
+                        env.INSTANCE_IP = bat(script: 'terraform output -raw public_ip', returnStdout: true).trim()
+                        echo "Ubuntu EC2 IP: ${env.INSTANCE_IP}"
                     }
                 }
             }
@@ -32,7 +31,7 @@ pipeline {
         stage('Run Ansible') {
             steps {
                 dir('ansible') {
-                    bat "wsl ansible-playbook -i ${env.INSTANCE_IP}, install_apache.yml --user=ubuntu --private-key=~/.ssh/id_rsa"
+                    bat "wsl ansible-playbook -i ${env.INSTANCE_IP}, install_apache.yml --user=ubuntu --private-key=~/.ssh/id_rsa --ssh-common-args='-o StrictHostKeyChecking=no'"
                 }
             }
         }
