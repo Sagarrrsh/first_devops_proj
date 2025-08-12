@@ -11,7 +11,6 @@ pipeline {
         stage('Terraform Apply') {
             steps {
                 dir('Terraform') {
-                    // Init and apply Terraform configuration
                     bat 'terraform init'
                     bat 'terraform apply -auto-approve'
                 }
@@ -22,7 +21,7 @@ pipeline {
             steps {
                 script {
                     dir('Terraform') {
-                        // Capture only the IP string, no extra prompt/output
+                        // Get only the IP string (no extra text)
                         env.INSTANCE_IP = bat(
                             script: 'terraform output -raw public_ip',
                             returnStdout: true
@@ -36,14 +35,13 @@ pipeline {
         stage('Run Ansible') {
             steps {
                 withCredentials([sshUserPrivateKey(
-                    credentialsId: 'ec2_ssh_key', // replace with your Jenkins SSH credential ID
+                    credentialsId: 'ec2_ssh_key', // change to your actual Jenkins credential ID
                     keyFileVariable: 'SSH_KEY'
                 )]) {
                     script {
-                        // WSL path to playbook
-                        def playbookPath = "/mnt/c/ProgramData/Jenkins/.jenkins/workspace/${env.JOB_NAME}/Ansible/install-apache.yml"
+                        // Local G:\devops-proj-1\Ansible path in WSL format
+                        def playbookPath = "/mnt/g/devops-proj-1/Ansible/install-apache.yml"
 
-                        // Run inside WSL Ubuntu
                         sh """
                             wsl /usr/bin/ansible-playbook \
                             -i '${env.INSTANCE_IP},' '${playbookPath}' \
