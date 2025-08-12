@@ -11,6 +11,7 @@ pipeline {
         stage('Terraform Apply') {
             steps {
                 dir('Terraform') {
+                    // Init and apply Terraform configuration
                     bat 'terraform init'
                     bat 'terraform apply -auto-approve'
                 }
@@ -21,11 +22,12 @@ pipeline {
             steps {
                 script {
                     dir('Terraform') {
+                        // Capture only the IP string, no extra prompt/output
                         env.INSTANCE_IP = bat(
                             script: 'terraform output -raw public_ip',
                             returnStdout: true
                         ).trim()
-                        echo "Ubuntu EC2 IP: ${env.INSTANCE_IP}"
+                        echo "EC2 Public IP: ${env.INSTANCE_IP}"
                     }
                 }
             }
@@ -34,16 +36,17 @@ pipeline {
         stage('Run Ansible') {
             steps {
                 withCredentials([sshUserPrivateKey(
-                    credentialsId: 'ec2_ssh_key', // change to your Jenkins SSH credential ID
+                    credentialsId: 'ec2_ssh_key', // replace with your Jenkins SSH credential ID
                     keyFileVariable: 'SSH_KEY'
                 )]) {
                     script {
-                        // Convert to WSL path for playbook
+                        // WSL path to playbook
                         def playbookPath = "/mnt/c/ProgramData/Jenkins/.jenkins/workspace/${env.JOB_NAME}/Ansible/install-apache.yml"
 
+                        // Run inside WSL Ubuntu
                         sh """
-                            wsl ansible-playbook \
-                            -i '${env.INSTANCE_IP},' "${playbookPath}" \
+                            wsl /usr/bin/ansible-playbook \
+                            -i '${env.INSTANCE_IP},' '${playbookPath}' \
                             --user=ubuntu \
                             --private-key="$SSH_KEY" \
                             --ssh-common-args='-o StrictHostKeyChecking=no'
