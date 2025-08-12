@@ -4,9 +4,8 @@ pipeline {
     environment {
         AWS_ACCESS_KEY_ID = credentials('aws_access_key_id')
         AWS_SECRET_ACCESS_KEY = credentials('aws_secret_access_key')
-        SSH_KEY = credentials('ec2_ssh_key')
     }
-    
+
     stages {
         stage('Terraform Apply') {
             steps {
@@ -16,7 +15,7 @@ pipeline {
                 }
             }
         }
-        
+
         stage('Get Instance IP') {
             steps {
                 script {
@@ -27,11 +26,16 @@ pipeline {
                 }
             }
         }
-        
+
         stage('Run Ansible') {
             steps {
-                dir('ansible') {
-                    bat "wsl ansible-playbook -i ${env.INSTANCE_IP}, install_apache.yml --user=ubuntu --private-key=~/.ssh/id_rsa --ssh-common-args='-o StrictHostKeyChecking=no'"
+                withCredentials([sshUserPrivateKey(credentialsId: 'ec2_ssh_key', keyFileVariable: 'SSH_KEY')]) {
+                    sh """
+                        wsl ansible-playbook -i '${env.INSTANCE_IP},' install_apache.yml \
+                        --user=ubuntu \
+                        --private-key=$SSH_KEY \
+                        --ssh-common-args='-o StrictHostKeyChecking=no'
+                    """
                 }
             }
         }
